@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Estudo Médico-Legal e Toxicológico</title>
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --secondary-color: #f8f9fa;
+            --text-color: #333;
+            --border-color: #dee2e6;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e9ecef;
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .quiz-container {
+            background: #fff;
+            max-width: 800px;
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .progress {
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+
+        .question-box {
+            margin-bottom: 20px;
+        }
+
+        .question-text {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 1em;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(0,86,179,0.3);
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary-color);
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #004494;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .feedback-box {
+            display: none;
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: var(--secondary-color);
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .feedback-box h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .feedback-item {
+            margin-bottom: 15px;
+        }
+
+        .feedback-item strong {
+            color: #495057;
+        }
+
+        .source-badge {
+            display: inline-block;
+            background: var(--info-color);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .btn-next {
+            background: var(--success-color);
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn-next:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Quiz: Deontologia e Toxicologia</h1>
+    <div class="progress" id="progress-text">Questão 1 de 40</div>
+
+    <div class="question-box">
+        <div class="question-text" id="question-text">Carregando questão...</div>
+        <textarea id="user-answer" placeholder="Digite sua resposta aqui..."></textarea>
+        <button class="btn" id="btn-confirmar" onclick="confirmarResposta()">Confirmar Resposta</button>
+    </div>
+
+    <div class="feedback-box" id="feedback-box">
+        <h3>Análise da Resposta</h3>
+        
+        <div class="feedback-item">
+            <strong>Sua Resposta:</strong>
+            <div id="display-user-answer"></div>
+        </div>
+
+        <div class="feedback-item">
+            <strong>Resposta Esperada:</strong>
+            <div id="display-correct-answer" style="color: var(--success-color); font-weight: bold;"></div>
+        </div>
+
+        <div class="feedback-item">
+            <strong>Justificativa:</strong>
+            <div id="display-rationale"></div>
+        </div>
+
+        <div class="feedback-item">
+            <span class="source-badge" id="display-source"></span>
+        </div>
+
+        <button class="btn btn-next" id="btn-next" onclick="proximaQuestao()">Próxima Questão</button>
+    </div>
+</div>
+
+<script>
+    // Banco de Questões (40 questões extraídas dos documentos)
+    const questoes = [
+        {
+            pergunta: "Qual o prazo mínimo de guarda do prontuário médico em suporte de papel?",
+            resposta: "20 anos a partir do último atendimento.",
+            justificativa: "A Resolução CFM nº 1.638/2002 estabelece o prazo mínimo de 20 anos para arquivamento de prontuários em papel. Prontuários eletrônicos têm guarda permanente.",
+            fonte: "Documento: Revisão P2 / Documentos Médico-Legais (Res. CFM 1.638/02)"
+        },
+        {
+            pergunta: "Qual documento médico-legal comprova a presença do paciente no serviço de saúde sem revelar o diagnóstico?",
+            resposta: "Atestado de comparecimento.",
+            justificativa: "O atestado de comparecimento serve exclusivamente para justificar ausências pontuais (ex: no trabalho) pelo período em que o paciente esteve em consulta, sem expor o CID.",
+            fonte: "Documento: Revisão P2 (Pág 1)"
+        },
+        {
+            pergunta: "Em caso de paciente adulto e capaz que recusa um tratamento vital, qual deve ser a conduta do médico?",
+            resposta: "Respeitar a autonomia, documentar a recusa no prontuário (TCLE) e não abandonar o paciente.",
+            justificativa: "A Resolução CFM nº 2.232/2019 garante o direito de recusa terapêutica, cabendo ao médico registrar o fato detalhadamente e propor cuidados paliativos ou alternativas.",
+            fonte: "Documento: Documentos Médico-Legais / Deontologia (Res. CFM 2.232/19)"
+        },
+        {
+            pergunta: "Para a emissão de atestado médico com a inclusão do CID, qual é a condição ética exigida?",
+            resposta: "Autorização expressa do paciente ou de seu representante legal.",
+            justificativa: "O diagnóstico é protegido por sigilo profissional. A quebra desse sigilo no atestado só é permitida com o consentimento do paciente, exceto em casos de justa causa ou dever legal.",
+            fonte: "Documento: Código de Ética Médica (Art. 73 e 80)"
+        },
+        {
+            pergunta: "O que caracteriza juridicamente uma anotação omitida no prontuário médico?",
+            resposta: "Presume-se que o ato ou procedimento não foi realizado.",
+            justificativa: "Na esfera jurídica, 'o que não está escrito não foi feito'. Prontuários incompletos prejudicam severamente a defesa do médico em casos de litígio.",
+            fonte: "Documento: Revisão P2 (Pág 1)"
+        },
+        {
+            pergunta: "Qual o antídoto específico para a intoxicação por organofosforados que reverte os sintomas muscarínicos?",
+            resposta: "Atropina.",
+            justificativa: "A atropina é um antagonista muscarínico que reverte sintomas como salivação, broncorreia e miose, embora não atue nas fasciculações musculares.",
+            fonte: "Documento: Revisão P2 (Pág 2)"
+        },
+        {
+            pergunta: "Qual é o antídoto utilizado para reverter a intoxicação por Paracetamol?",
+            resposta: "N-acetilcisteína.",
+            justificativa: "O paracetamol em overdose causa insuficiência hepática grave, e a N-acetilcisteína atua repondo os estoques de glutationa no fígado.",
+            fonte: "Documento: Revisão P2 (Pág 2)"
+        },
+        {
+            pergunta: "Quais são os sinais clássicos da intoxicação aguda por Monóxido de Carbono (CO)?",
+            resposta: "Coloração vermelho-cereja na pele/mucosas e sangue brilhante.",
+            justificativa: "O CO possui afinidade até 240 vezes maior pela hemoglobina que o oxigênio, formando a carboxihemoglobina, que possui essa pigmentação característica.",
+            fonte: "Documento: Revisão P2 (Pág 2/3)"
+        },
+        {
+            pergunta: "Em toxicologia forense, qual matriz biológica é a mais indicada para análise em cadáveres em estado de putrefação avançada?",
+            resposta: "Humor vítreo.",
+            justificativa: "O humor vítreo é isolado e menos sujeito à contaminação por bactérias da putrefação e à produção de etanol endógeno, sendo ideal para exames post-mortem tardios.",
+            fonte: "Documento: Revisão P2 (Pág 3) / Toxicologia Forense"
+        },
+        {
+            pergunta: "Qual é a consequência jurídica direta da quebra da Cadeia de Custódia de uma prova pericial?",
+            resposta: "Nulidade da prova.",
+            justificativa: "A cadeia de custódia garante a integridade e rastreabilidade da evidência. Se houver falha na documentação da transferência ou armazenamento, o exame perde a validade legal.",
+            fonte: "Documento: Revisão P2 (Pág 3) / Toxicologia Forense"
+        },
+        {
+            pergunta: "Como se caracteriza a tríade clássica da overdose por opioides (ex: morfina, heroína)?",
+            resposta: "Miose, depressão respiratória e coma.",
+            justificativa: "Os opioides são depressores do sistema nervoso central. A depressão respiratória é a principal causa de óbito nestes casos.",
+            fonte: "Documento: Toxicologia Forense"
+        },
+        {
+            pergunta: "Qual o antídoto utilizado para reverter o quadro de intoxicação por opioides?",
+            resposta: "Naloxona.",
+            justificativa: "A naloxona atua como antagonista competitivo dos receptores opioides, revertendo rapidamente a depressão respiratória.",
+            fonte: "Documento: Toxicologia Forense"
+        },
+        {
+            pergunta: "A omissão da notificação compulsória de maus-tratos infantis pode acarretar quais tipos de responsabilização ao médico?",
+            resposta: "Responsabilidade ética, civil e penal.",
+            justificativa: "O médico tem o dever legal de notificar casos suspeitos ou confirmados de violência contra crianças. A omissão configura infração grave em múltiplas esferas.",
+            fonte: "Documento: Revisão P2 (Pág 3) / Deontologia"
+        },
+        {
+            pergunta: "A cocaína age como estimulante por qual mecanismo de ação principal no SNC?",
+            resposta: "Inibição da recaptação de neurotransmissores (dopamina, noradrenalina e serotonina).",
+            justificativa: "Ao bloquear a recaptação, a cocaína aumenta a disponibilidade desses neurotransmissores na fenda sináptica, gerando euforia e hiperestimulação simpática.",
+            fonte: "Documento: Drogas de Abuso (Pág 4)"
+        },
+        {
+            pergunta: "O que é o Cocaetileno e por que ele é clinicamente relevante?",
+            resposta: "É um metabólito ativo formado pela interação entre cocaína e álcool, possuindo maior cardiotoxicidade.",
+            justificativa: "O uso simultâneo de cocaína e álcool gera o cocaetileno no fígado, prolongando os efeitos euforizantes, mas aumentando significativamente o risco de arritmias e morte súbita.",
+            fonte: "Documento: Toxicologia Forense"
+        },
+        {
+            pergunta: "Qual o metabólito da cocaína comumente pesquisado em exames de urina devido à sua maior meia-vida?",
+            resposta: "Benzoilecgonina.",
+            justificativa: "A cocaína inalterada tem meia-vida muito curta, por isso a benzoilecgonina, seu metabólito inativo, é o marcador padrão em testes de triagem urinária.",
+            fonte: "Documento: Toxicologia Forense"
+        },
+        {
+            pergunta: "Qual é a via de administração da cocaína que produz o pico plasmático mais rápido?",
+            resposta: "Via inalatória (fumada, como o crack).",
+            justificativa: "O crack atinge o cérebro em poucos segundos devido à grande superfície de absorção pulmonar e rápida passagem para a circulação sistêmica.",
+            fonte: "Documento: Drogas de Abuso (Pág 6)"
+        },
+        {
+            pergunta: "Qual é a principal causa de morte associada ao uso de MDMA (Ecstasy) em ambientes festivos?",
+            resposta: "Hipertermia grave.",
+            justificativa: "O MDMA causa hipermetabolismo e síndrome serotoninérgica. Em ambientes quentes e com esforço físico (dança), a termorregulação falha, levando a rabdomiólise e falência múltipla.",
+            fonte: "Documento: Drogas de Abuso (Pág 24)"
+        },
+        {
+            pergunta: "Qual substância é considerada o marcador específico que comprova o uso de heroína?",
+            resposta: "6-monoacetilmorfina (6-MAM).",
+            justificativa: "A heroína se converte rapidamente em 6-MAM e depois em morfina. A presença de 6-MAM diferencia especificamente o uso de heroína do uso de morfina farmacológica.",
+            fonte: "Documento: Toxicologia Forense"
+        },
+        {
+            pergunta: "No contexto da Bioética, o que significa o princípio da 'Não Maleficência'?",
+            resposta: "O dever de não causar dano intencional ao paciente ('primum non nocere').",
+            justificativa: "É o princípio basilar que orienta que a ação médica, mesmo buscando a cura, não deve impor riscos desproporcionais ou danos previsíveis e evitáveis.",
+            fonte: "Documento: Aula 1 - Deontologia Médica"
+        },
+        {
+            pergunta: "Na responsabilidade médica, como se define a 'Imperícia'?",
+            resposta: "É a falta de conhecimento técnico, preparo prático ou habilidade para realizar determinado procedimento médico.",
+            justificativa: "A imperícia ocorre quando o profissional se propõe a fazer algo para o qual não está tecnicamente capacitado.",
+            fonte: "Documento: Deontologia Médica / Diceologia"
+        },
+        {
+            pergunta: "Na responsabilidade médica, como se define a 'Imprudência'?",
+            resposta: "É a ação precipitada, sem a devida cautela, assumindo riscos desnecessários.",
+            justificativa: "Ao contrário da imperícia (falta de saber), a imprudência é o agir sem cuidado, ex: realizar cirurgia eletiva sem exames pré-operatórios básicos.",
+            fonte: "Documento: Deontologia Médica"
+        },
+        {
+            pergunta: "Na responsabilidade médica, como se define a 'Negligência'?",
+            resposta: "É a omissão, a desídia, a falta de cuidado ou abandono do paciente.",
+            justificativa: "A negligência é caracterizada pela inação quando havia o dever de agir. Ex: esquecer compressa no abdome do paciente por não conferir o material.",
+            fonte: "Documento: Deontologia Médica"
+        },
+        {
+            pergunta: "Qual é a principal complicação clínica aguda causada pela inalação de solventes orgânicos (lança-perfume, cola)?",
+            resposta: "Arritmias cardíacas graves (morte súbita por inalação).",
+            justificativa: "Os solventes sensibilizam o miocárdio à ação das catecolaminas (adrenalina), podendo causar fibrilação ventricular e morte súbita frente a sustos ou exercícios.",
+            fonte: "Documento: Toxicologia Forense"
+        },
+        {
+            pergunta: "O LSD (Ácido Lisérgico) atua mimetizando qual neurotransmissor no cérebro?",
+            resposta: "Serotonina.",
+            justificativa: "O LSD é um agonista dos receptores de serotonina (principalmente 5-HT2A), o que justifica suas profundas alterações na percepção, humor e cognição (alucinações).",
+            fonte: "Documento: Drogas de Abuso (Pág 25/26)"
+        },
+        {
+            pergunta: "Qual é a diferença fundamental entre um Laudo Pericial e um Parecer Médico-Legal?",
+            resposta: "O laudo é o relatório de uma perícia oficial respondendo a quesitos; o parecer é a resposta a uma consulta técnica feita por uma das partes.",
+            justificativa: "Laudos são produzidos por peritos designados. Pareceres são emitidos por assistentes técnicos ou especialistas contratados para analisar os achados do laudo.",
+            fonte: "Documento: Revisão P2 / Documentos Médico-Legais"
+        },
+        {
+            pergunta: "A Lei Geral de Proteção de Dados (LGPD) permite que o paciente solicite a exclusão definitiva do seu prontuário médico?",
+            resposta: "Não.",
+            justificativa: "O prontuário é um documento histórico e médico-legal. A LGPD exige segurança e privacidade dos dados, mas não sobrepõe a legislação do CFM que obriga a guarda do prontuário.",
+            fonte: "Documento: Revisão P2 (Pág 1)"
+        },
+        {
+            pergunta: "Em toxicologia, o que define o termo 'Poliabuso'?",
+            resposta: "É o uso concomitante de duas ou mais substâncias de abuso.",
+            justificativa: "O poliabuso altera quadros clínicos clássicos, dificulta o diagnóstico toxicológico e agrava os riscos de interações medicamentosas e overdose.",
+            fonte: "Documento: Drogas de Abuso (Pág 23)"
+        },
+        {
+            pergunta: "O Termo de Consentimento Livre e Esclarecido (TCLE) pode ser dispensado em qual situação clínica?",
+            resposta: "Em casos de urgência e emergência com risco iminente de morte.",
+            justificativa: "Quando a vida do paciente está em risco imediato e ele não pode consentir, o médico tem o dever de intervir fundamentado no princípio da beneficência.",
+            fonte: "Documento: Documentos Médico-Legais"
+        },
+        {
+            pergunta: "Na síndrome colinérgica, além de sudorese e salivação, qual alteração pupilar é característica?",
+            resposta: "Miose.",
+            justificativa: "A hiperestimulação parassimpática (muscarínica) pelo excesso de acetilcolina causa contração do músculo esfíncter da íris, resultando em pupilas puntiformes (miose).",
+            fonte: "Documento: Toxicologia Forense"
+        },
+        {
+            pergunta: "Em pacientes com intoxicação aguda por cocaína e agitação severa, qual classe de medicação é a primeira linha para sedação?",
+            resposta: "Benzodiazepínicos (ex: Diazepam).",
+            justificativa: "Os benzodiazepínicos reduzem a agitação central, o risco de convulsões e melhoram os parâmetros cardiovasculares secundários à descarga adrenérgica.",
+            fonte: "Documento: Toxicologia Forense"
+        },
+        {
+            pergunta: "A emissão de atestado médico contendo informações falsas constitui qual crime segundo o Código Penal Brasileiro?",
+            resposta: "Falsidade de atestado médico (Art. 302 do CP) ou Falsidade Ideológica.",
+            justificativa: "O atestado é um documento que goza de presunção de veracidade. Emitir documento inverídico é infração ética e penal.",
+            fonte: "Documento: Documentos Médico-Legais (Cód. Penal)"
+        },
+        {
+            pergunta: "Qual matriz biológica é a mais indicada para comprovar o uso crônico ou preterito de drogas (meses atrás)?",
+            resposta: "Cabelos ou unhas.",
+            justificativa: "As drogas se depositam na queratina capilar à medida que o fio cresce, permitindo um histórico toxicológico de semanas a meses (janela de detecção ampla).",
+            fonte: "Documento: Revisão P2 (Pág 3)"
+        },
+        {
+            pergunta: "Em toxicologia, o etanol endógeno pode gerar um exame falso-positivo no sangue de um cadáver devido a qual processo?",
+            resposta: "Putrefação bacteriana.",
+            justificativa: "Bactérias fermentam açúcares e proteínas presentes no corpo em decomposição, produzindo etanol pós-morte, o que exige cautela na interpretação de laudos em cadáveres.",
+            fonte: "Documento: Toxicologia Forense"
+        },
+        {
+            pergunta: "Qual é o antídoto específico para intoxicação por benzodiazepínicos?",
+            resposta: "Flumazenil.",
+            justificativa: "O flumazenil é um antagonista competitivo dos receptores GABA-A. Deve ser usado com cautela, pois pode precipitar convulsões em usuários crônicos.",
+            fonte: "Documento: Toxicologia Forense"
+        },
+        {
+            pergunta: "A comunicação de doenças compulsórias (ex: tuberculose) viola o sigilo médico?",
+            resposta: "Não, constitui exceção legal ao dever de sigilo.",
+            justificativa: "A notificação compulsória é um dever legal em prol da saúde coletiva e vigilância epidemiológica, sobrepondo-se à confidencialidade individual (Lei 6.259/75).",
+            fonte: "Documento: Documentos Médico-Legais / Revisão P2"
+        },
+        {
+            pergunta: "A qual princípio bioético a obtenção correta do TCLE (Termo de Consentimento Livre e Esclarecido) atende prioritariamente?",
+            resposta: "Autonomia.",
+            justificativa: "O TCLE garante que o paciente receba informações compreensíveis e exerça seu direito de autodeterminação sobre seu próprio corpo e tratamento.",
+            fonte: "Documento: Aula 1 - Deontologia Médica"
+        },
+        {
+            pergunta: "O que o perito deve fazer se houver discrepância entre o relato do paciente e os achados objetivos no exame físico pericial?",
+            resposta: "Registrar os achados objetivos de forma imparcial no laudo pericial.",
+            justificativa: "O perito atua a serviço da Justiça ou da administração, devendo ater-se exclusivamente à verdade científica e material, sem proteger ou acusar.",
+            fonte: "Documento: Documentos Médico-Legais"
+        },
+        {
+            pergunta: "Qual síndrome tóxica cursa caracteristicamente com taquicardia, hipertensão, agitação, sudorese e midríase?",
+            resposta: "Síndrome simpaticomimética (ex: cocaína, anfetaminas).",
+            justificativa: "O excesso de catecolaminas gera estado de 'luta ou fuga' hiperativado. A sudorese a diferencia da síndrome anticolinérgica (que cursa com pele seca).",
+            fonte: "Documento: Toxicologia Forense / Drogas de Abuso"
+        },
+        {
+            pergunta: "A maconha (Cannabis) possui como principal princípio ativo psicoativo o delta-9-THC. Ele atua predominantemente em quais receptores no cérebro?",
+            resposta: "Receptores canabinoides (CB1).",
+            justificativa: "O THC liga-se aos receptores CB1 localizados no SNC, alterando a memória de curto prazo, coordenação, humor e apetite.",
+            fonte: "Documento: Drogas de Abuso"
+        }
+    ];
+
+    let questaoAtual = 0;
+
+    const elProgress = document.getElementById('progress-text');
+    const elQuestionText = document.getElementById('question-text');
+    const elUserAnswer = document.getElementById('user-answer');
+    const btnConfirmar = document.getElementById('btn-confirmar');
+    const elFeedbackBox = document.getElementById('feedback-box');
+    
+    const elDisplayUserAnswer = document.getElementById('display-user-answer');
+    const elDisplayCorrectAnswer = document.getElementById('display-correct-answer');
+    const elDisplayRationale = document.getElementById('display-rationale');
+    const elDisplaySource = document.getElementById('display-source');
+    const btnNext = document.getElementById('btn-next');
+
+    function carregarQuestao() {
+        // Reseta a interface
+        elUserAnswer.value = "";
+        elUserAnswer.disabled = false;
+        btnConfirmar.disabled = false;
+        elFeedbackBox.style.display = "none";
+        
+        // Atualiza textos
+        elProgress.innerText = `Questão ${questaoAtual + 1} de ${questoes.length}`;
+        elQuestionText.innerText = questoes[questaoAtual].pergunta;
+        
+        // Foca no textarea
+        elUserAnswer.focus();
+    }
+
+    function confirmarResposta() {
+        const respostaUsuario = elUserAnswer.value.trim();
+        
+        if(respostaUsuario === "") {
+            alert("Por favor, digite alguma resposta antes de confirmar.");
+            return;
+        }
+
+        const q = questoes[questaoAtual];
+
+        // Preenche o feedback
+        elDisplayUserAnswer.innerText = respostaUsuario;
+        elDisplayCorrectAnswer.innerText = q.resposta;
+        elDisplayRationale.innerText = q.justificativa;
+        elDisplaySource.innerText = q.fonte;
+
+        // Desabilita entrada e mostra feedback
+        elUserAnswer.disabled = true;
+        btnConfirmar.disabled = true;
+        elFeedbackBox.style.display = "block";
+
+        // Altera texto do botão final se for a última questão
+        if (questaoAtual === questoes.length - 1) {
+            btnNext.innerText = "Finalizar Quiz";
+        }
+    }
+
+    function proximaQuestao() {
+        if (questaoAtual < questoes.length - 1) {
+            questaoAtual++;
+            carregarQuestao();
+        } else {
+            alert("Parabéns! Você concluiu todas as 40 questões do Quiz de Revisão.");
+            questaoAtual = 0; // Reinicia o quiz
+            btnNext.innerText = "Próxima Questão";
+            carregarQuestao();
+        }
+    }
+
+    // Inicializa o app
+    window.onload = carregarQuestao;
+
+</script>
+</body>
+</html>
+
